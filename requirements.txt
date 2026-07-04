@@ -1,0 +1,16 @@
+# Core (no hard requirements — ACE's text mode runs on the standard library)
+
+# System info & screenshots
+psutil>=5.9
+Pillow>=10.0
+
+# Clipboard
+pyperclip>=1.8
+
+# Voice mode (microphone + text-to-speech)
+SpeechRecognition>=3.10
+pyttsx3>=2.90
+PyAudio>=0.2.13  ; sys_platform == "win32"
+
+# Optional: Claude API brain (free-form requests)
+anthropic>=0.40
