@@ -17,7 +17,7 @@ BANNER = rf"""
 """
 
 
-def run(voice: bool = False, wake_word: bool = True) -> None:
+def run(voice: bool = False, wake_word: bool = True, tts_voice: str = "") -> None:
     config.ensure_data_dir()
     print(BANNER)
 
@@ -25,7 +25,7 @@ def run(voice: bool = False, wake_word: bool = True) -> None:
         try:
             from ace.io_channels.voice_io import VoiceIO
 
-            io = VoiceIO(require_wake_word=wake_word)
+            io = VoiceIO(require_wake_word=wake_word, tts_voice=tts_voice)
         except ImportError:
             print(
                 "Voice mode needs extra packages:\n"

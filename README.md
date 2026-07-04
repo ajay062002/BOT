@@ -60,8 +60,27 @@ python -m ace --voice
 - Uses your microphone for speech recognition (Google's free recognizer via
   the `SpeechRecognition` package) and speaks replies out loud (offline, via
   `pyttsx3`).
-- Say **"ace"** followed by your command, e.g. *"ace, open notepad"*.
-- Voice mode still prints everything, and you can always type instead.
+- Say **"ace"** followed by your command, e.g. *"ace, open notepad"* — or use
+  `--no-wake` to skip the wake word entirely.
+- Voice mode prints everything it hears and says; press Ctrl+C to quit.
+
+### Changing ACE's voice
+
+```bash
+python -m ace --voices                      # list installed voices
+python -m ace --voice --tts-voice zira      # try one for this session
+```
+
+To make a voice permanent, create `%USERPROFILE%\.ace\config.ini`:
+
+```ini
+[ace]
+voice = zira        # any part of the voice's name
+voice_rate = 180    # words per minute (150 = slower, 210 = faster)
+```
+
+Windows ships with David (male) and Zira (female). More voices: Settings →
+Time & Language → Speech → Add voices.
 
 ## Project layout
 

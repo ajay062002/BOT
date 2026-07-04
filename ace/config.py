@@ -34,6 +34,12 @@ def _read_config() -> configparser.ConfigParser:
     return parser
 
 
+def get_setting(key: str, fallback: str = "") -> str:
+    """Read a setting from ~/.ace/config.ini's [ace] section."""
+    parser = _read_config()
+    return parser.get("ace", key, fallback=fallback).strip()
+
+
 def get_api_key() -> str | None:
     key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
     if key:

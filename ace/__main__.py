@@ -15,8 +15,26 @@ def main() -> None:
         action="store_true",
         help="voice mode responds to everything, without needing the 'ace' wake word",
     )
+    parser.add_argument(
+        "--voices",
+        action="store_true",
+        help="list installed text-to-speech voices and exit",
+    )
+    parser.add_argument(
+        "--tts-voice",
+        default="",
+        metavar="NAME",
+        help="speak with this voice (e.g. zira, david); see --voices for options",
+    )
     args = parser.parse_args()
-    run(voice=args.voice, wake_word=not args.no_wake)
+
+    if args.voices:
+        from ace.io_channels.voice_io import print_voices
+
+        print_voices()
+        return
+
+    run(voice=args.voice, wake_word=not args.no_wake, tts_voice=args.tts_voice)
 
 
 if __name__ == "__main__":
