@@ -17,7 +17,7 @@ BANNER = rf"""
 """
 
 
-def run(voice: bool = False) -> None:
+def run(voice: bool = False, wake_word: bool = True) -> None:
     config.ensure_data_dir()
     print(BANNER)
 
@@ -25,7 +25,7 @@ def run(voice: bool = False) -> None:
         try:
             from ace.io_channels.voice_io import VoiceIO
 
-            io = VoiceIO()
+            io = VoiceIO(require_wake_word=wake_word)
         except ImportError:
             print(
                 "Voice mode needs extra packages:\n"
@@ -53,12 +53,16 @@ def run(voice: bool = False) -> None:
 
     io.say("Hello! I'm ACE. How can I help?")
 
-    while True:
-        text = io.listen()
-        if not text.strip():
-            continue
-        if text.strip().lower() in EXIT_WORDS:
-            io.say("Goodbye!")
-            break
-        result = route(text, llm=llm)
-        io.say(result.reply)
+    try:
+        while True:
+            text = io.listen()
+            if not text.strip():
+                continue
+            if text.strip().lower() in EXIT_WORDS:
+                io.say("Goodbye!")
+                break
+            result = route(text, llm=llm)
+            io.say(result.reply)
+    except KeyboardInterrupt:
+        print()
+        io.say("Goodbye!")
