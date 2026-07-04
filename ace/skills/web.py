@@ -74,6 +74,7 @@ def play_on_youtube(query: str) -> str:
     r"(?:what(?:'s| is) the )?weather(?: like)?(?: in (?P<city>.+?))?(?: today)?",
     help="weather / weather in <city> — quick forecast",
     priority=25,
+    keywords=[("weather",)],
 )
 def weather(city: str = "") -> str:
     import urllib.error

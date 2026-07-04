@@ -23,6 +23,7 @@ def greet() -> str:
     r"(?:what(?:'s| is) the time|what time is it|time)",
     help="what time is it — current time",
     priority=10,
+    keywords=[("what", "time"), ("tell", "time"), ("current", "time")],
 )
 def tell_time() -> str:
     return datetime.now().strftime("It's %I:%M %p.")
@@ -32,6 +33,7 @@ def tell_time() -> str:
     r"(?:what(?:'s| is) (?:the |today'?s )?date|date today|today)",
     help="what's the date — today's date",
     priority=10,
+    keywords=[("what", "date"), ("today's", "date"), ("todays", "date")],
 )
 def tell_date() -> str:
     return datetime.now().strftime("Today is %A, %B %d, %Y.")
@@ -46,7 +48,12 @@ def who_are_you() -> str:
     )
 
 
-@skill(r"(?:help|what can you do|commands|abilities)", help="", priority=10)
+@skill(
+    r"(?:help|what can you do|commands|abilities)",
+    help="",
+    priority=10,
+    keywords=[("help",), ("what", "can", "you", "do")],
+)
 def show_help() -> str:
     from ace.brain.router import help_text
 

@@ -46,9 +46,31 @@ def mute() -> str:
 
 
 @skill(
+    r"(?:open|show)(?: (?:the|my|that|your))?(?: (?:last|latest|recent))? screenshots?(?: (?:folder|you'?ve? taken|you took))?",
+    help="open the last screenshot — view the most recent one",
+    priority=15,
+    keywords=[("open", "screenshot"), ("show", "screenshot"), ("see", "screenshot")],
+)
+def open_screenshot() -> str:
+    folder = config.screenshots_dir()
+    shots = sorted(folder.glob("screenshot-*.png"))
+    if not shots:
+        return "You haven't taken any screenshots yet. Say 'take a screenshot' first."
+    latest = shots[-1]
+    if IS_WINDOWS:
+        import os
+
+        os.startfile(str(latest))
+    else:
+        subprocess.Popen(["xdg-open", str(latest)])
+    return f"Opening your latest screenshot: {latest.name}"
+
+
+@skill(
     r"(?:take (?:a )?)?screenshot(?: this)?(?: screen)?",
     help="take a screenshot — saved to Pictures\\ACE Screenshots",
     priority=20,
+    keywords=[("take", "screenshot"), ("capture", "screen")],
 )
 def screenshot() -> str:
     try:
@@ -103,6 +125,7 @@ def restart() -> str:
     r"(?:system info|system status|how(?:'s| is) my (?:pc|computer)(?: doing)?)",
     help="system info — CPU, memory and disk usage",
     priority=20,
+    keywords=[("system", "info"), ("system", "status"), ("cpu", "usage"), ("ram", "usage")],
 )
 def system_info() -> str:
     try:

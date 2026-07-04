@@ -26,6 +26,7 @@ class Skill:
     func: SkillFunc
     help: str
     priority: int = 50
+    keywords: list[tuple[str, ...]] = field(default_factory=list)
     name: str = field(default="")
 
     def __post_init__(self):
@@ -36,17 +37,38 @@ class Skill:
 _REGISTRY: list[Skill] = []
 
 
-def skill(pattern: str, *, help: str = "", priority: int = 50) -> Callable[[SkillFunc], SkillFunc]:
+def skill(
+    pattern: str,
+    *,
+    help: str = "",
+    priority: int = 50,
+    keywords: list[tuple[str, ...]] | None = None,
+) -> Callable[[SkillFunc], SkillFunc]:
     """Register a function as an ACE skill.
 
     `pattern` is anchored on both ends, so write the full command shape.
     Lower `priority` numbers are tried first — give broad, catch-all
     patterns (like "open <anything>") a high number so specific skills win.
+
+    `keywords` enables a looser second matching pass for natural speech:
+    if no skill's pattern matched the whole utterance, a skill fires when
+    all words of any one keyword tuple appear in it (e.g. "give me a bit
+    of a system info" → ("system", "info")). Keyword-matched skills are
+    called with no arguments, so only add keywords to functions whose
+    parameters are all optional.
     """
 
     def decorator(func: SkillFunc) -> SkillFunc:
         compiled = re.compile(rf"^\s*(?:{pattern})\s*$", re.IGNORECASE)
-        _REGISTRY.append(Skill(pattern=compiled, func=func, help=help, priority=priority))
+        _REGISTRY.append(
+            Skill(
+                pattern=compiled,
+                func=func,
+                help=help,
+                priority=priority,
+                keywords=list(keywords or []),
+            )
+        )
         return func
 
     return decorator

@@ -27,6 +27,7 @@ def take_note(text: str) -> str:
     r"(?:show|read|list)(?: my)? notes",
     help="show my notes — read saved notes",
     priority=20,
+    keywords=[("show", "notes"), ("read", "notes"), ("what", "notes")],
 )
 def show_notes() -> str:
     if not config.NOTES_FILE.exists():

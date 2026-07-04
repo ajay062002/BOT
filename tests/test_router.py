@@ -68,6 +68,33 @@ class RouterTests(unittest.TestCase):
     def test_who_are_you(self):
         self.assertEqual(self.handled_by("who are you"), "who_are_you")
 
+    # --- natural speech (phrases that failed in real voice usage) ---
+
+    def test_courtesy_prefix_open_app(self):
+        self.assertEqual(self.handled_by("can you open Notepad"), "open_app")
+        self.assertEqual(self.handled_by("hey ace, please open notepad"), "open_app")
+
+    def test_courtesy_suffix(self):
+        self.assertEqual(self.handled_by("open notepad please"), "open_app")
+
+    def test_keyword_system_info(self):
+        self.assertEqual(self.handled_by("give me a bit of a system info"), "system_info")
+
+    def test_keyword_open_screenshot(self):
+        self.assertEqual(
+            self.handled_by("can you open the screenshot that you've taken"),
+            "open_screenshot",
+        )
+
+    def test_keyword_time(self):
+        self.assertEqual(self.handled_by("could you tell me the time"), "tell_time")
+
+    def test_keyword_does_not_shadow_exact_match(self):
+        # "set timer 10 minutes" contains no clash, but "take a screenshot"
+        # must still hit the exact skill, not a keyword pass
+        self.assertEqual(self.handled_by("take a screenshot"), "screenshot")
+        self.assertEqual(self.handled_by("open downloads"), "open_folder")
+
 
 if __name__ == "__main__":
     unittest.main()
