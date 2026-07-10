@@ -27,7 +27,9 @@ reading the corpus naively (~266k tokens naive vs ~4.5k per graph query).
 ## Files
 
 - `graphs/all-projects-graph.json` — the merged graph (query this)
-- `graphify-out/graph.html` — interactive visualization, open in any browser
+- `graphify-out/graph3d.html` — 3D interactive viewer (WebGL): orbit/zoom, search,
+  project filters, click a node for its connections, animated link particles
+- `graphify-out/graph.html` — the stock 2D visualization
 - `graphify-out/GRAPH_REPORT.md` — merged-graph highlights
 - `reports/*.md` — per-project graph reports
 - `refresh.sh` — rebuild everything from the latest code
