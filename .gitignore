@@ -1,1 +1,6 @@
+node_modules/
+.env
+data/workflows.json
+*.log
+.DS_Store
 /graphify-out/

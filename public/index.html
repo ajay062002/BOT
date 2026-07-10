@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0d0d">
+<title>Agentic OS</title>
+<style>
+  :root {
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --series-1: #2a78d6;
+    --series-2: #1baf7a;
+    --good: #006300;
+    --accent-wash: rgba(42, 120, 214, 0.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --baseline: #383835;
+      --border: rgba(255, 255, 255, 0.10);
+      --series-1: #3987e5;
+      --series-2: #199e70;
+      --good: #0ca30c;
+      --accent-wash: rgba(57, 135, 229, 0.14);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+    -webkit-tap-highlight-color: transparent;
+  }
+  header {
+    padding: 20px 16px 12px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  header h1 { margin: 0; font-size: 20px; letter-spacing: -0.01em; }
+  header p { margin: 4px 0 0; color: var(--ink-2); font-size: 13px; }
+  main { max-width: 720px; margin: 0 auto; padding: 0 16px; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .card h2 { margin: 0 0 4px; font-size: 15px; }
+  .card .sub { margin: 0 0 12px; color: var(--muted); font-size: 12px; }
+
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .tile .label { font-size: 12px; color: var(--ink-2); }
+  .tile .value { font-size: 24px; font-weight: 600; margin-top: 4px; }
+
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    color: var(--ink-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 2px 8px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .badge.live { color: var(--good); }
+
+  /* Chart */
+  .chart-wrap { position: relative; }
+  .chart-wrap svg { display: block; width: 100%; height: auto; }
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+    color: var(--ink);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    opacity: 0;
+    transition: opacity 0.1s;
+    white-space: nowrap;
+    z-index: 2;
+  }
+  .tooltip .t-title { font-weight: 600; max-width: 220px; white-space: normal; }
+  .tooltip .t-val { color: var(--ink-2); margin-top: 2px; }
+  table.data { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+  table.data th { text-align: left; color: var(--muted); font-weight: 500; padding: 6px 4px; border-bottom: 1px solid var(--grid); }
+  table.data td { padding: 6px 4px; border-bottom: 1px solid var(--grid); color: var(--ink-2); }
+  table.data td.num { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); }
+  details.table-view summary { font-size: 12px; color: var(--muted); cursor: pointer; margin-top: 10px; }
+
+  /* Chat */
+  .chat-log { display: flex; flex-direction: column; gap: 8px; min-height: 160px; max-height: 50vh; overflow-y: auto; margin-bottom: 12px; }
+  .msg { max-width: 85%; padding: 10px 12px; border-radius: 12px; font-size: 14px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: break-word; }
+  .msg.user { align-self: flex-end; background: var(--accent-wash); border: 1px solid var(--border); }
+  .msg.agent { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); }
+  .msg.agent.pending { color: var(--muted); }
+
+  form.row { display: flex; gap: 8px; }
+  input[type="text"], input[type="search"] {
+    flex: 1;
+    min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--ink);
+    font: inherit;
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+  input:focus { outline: 2px solid var(--series-1); outline-offset: -1px; }
+  button.primary {
+    background: var(--series-1);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 16px;
+    cursor: pointer;
+  }
+  button.primary:disabled { opacity: 0.5; }
+
+  /* Knowledge results */
+  .result { padding: 10px 0; border-bottom: 1px solid var(--grid); }
+  .result:last-child { border-bottom: none; }
+  .result .r-title { font-size: 14px; font-weight: 600; }
+  .result .r-file { font-size: 11px; color: var(--muted); margin-left: 6px; font-weight: 400; }
+  .result .r-snippet { font-size: 13px; color: var(--ink-2); margin-top: 4px; line-height: 1.45; }
+  .empty { color: var(--muted); font-size: 13px; padding: 8px 0; }
+
+  /* Workflows */
+  .wf { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--grid); }
+  .wf:last-child { border-bottom: none; }
+  .wf .wf-title { flex: 1; font-size: 14px; }
+  .wf.done .wf-title { color: var(--muted); text-decoration: line-through; }
+  .wf select {
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font: inherit;
+    font-size: 12px;
+    padding: 4px 6px;
+  }
+  .wf-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .wf-dot.todo { background: var(--muted); }
+  .wf-dot.active { background: var(--series-1); }
+  .wf-dot.done { background: var(--series-2); }
+
+  /* Bottom nav */
+  nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 3;
+  }
+  nav button {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font: inherit;
+    font-size: 11px;
+    padding: 8px 0 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  nav button .icon { font-size: 18px; line-height: 1; }
+  nav button.active { color: var(--series-1); font-weight: 600; }
+
+  @media (min-width: 720px) {
+    header { padding-top: 32px; }
+    .tiles { gap: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Agentic OS</h1>
+  <p>Unified command center — metrics, agents, knowledge, workflows</p>
+</header>
+
+<main>
+  <!-- Overview -->
+  <section class="view active" id="view-overview">
+    <div class="tiles" id="overview-tiles"></div>
+    <div class="card" style="margin-top:12px">
+      <h2>System status</h2>
+      <p class="sub">Module connections from <code>/api/health</code></p>
+      <div id="status-list" class="empty">Loading…</div>
+    </div>
+  </section>
+
+  <!-- Metrics -->
+  <section class="view" id="view-metrics">
+    <div class="card">
+      <h2>Channel metrics <span class="badge" id="yt-badge">…</span></h2>
+      <p class="sub" id="yt-channel-name">Loading channel…</p>
+      <div class="tiles" id="yt-tiles" style="margin-bottom:16px"></div>
+      <h2>Recent video views</h2>
+      <p class="sub">Latest uploads, most recent first</p>
+      <div class="chart-wrap" id="chart-wrap">
+        <div class="tooltip" id="chart-tooltip"></div>
+        <svg id="views-chart" role="img" aria-label="Bar chart of views for recent videos"></svg>
+      </div>
+      <details class="table-view">
+        <summary>View as table</summary>
+        <table class="data" id="views-table"></table>
+      </details>
+    </div>
+  </section>
+
+  <!-- Hermes agent -->
+  <section class="view" id="view-agent">
+    <div class="card">
+      <h2>Hermes agent <span class="badge" id="hermes-badge">…</span></h2>
+      <p class="sub">Chat with the autonomous agent on your VPS</p>
+      <div class="chat-log" id="chat-log">
+        <div class="msg agent">Hermes online. Ask me to run a workflow, check metrics, or search the knowledge base.</div>
+      </div>
+      <form class="row" id="chat-form">
+        <input type="text" id="chat-input" placeholder="Message Hermes…" autocomplete="off" enterkeyhint="send">
+        <button class="primary" type="submit">Send</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Knowledge -->
+  <section class="view" id="view-knowledge">
+    <div class="card">
+      <h2>Knowledge search</h2>
+      <p class="sub">Query the Graphify data brain (local markdown knowledge base)</p>
+      <form class="row" id="search-form">
+        <input type="search" id="search-input" placeholder="Search the brain…" autocomplete="off" enterkeyhint="search">
+        <button class="primary" type="submit">Search</button>
+      </form>
+      <div id="search-results"></div>
+    </div>
+    <div class="card">
+      <h2>Documents</h2>
+      <p class="sub">Everything the brain knows about</p>
+      <div id="doc-list" class="empty">Loading…</div>
+    </div>
+  </section>
+
+  <!-- Workflows -->
+  <section class="view" id="view-workflows">
+    <div class="card">
+      <h2>Workflows</h2>
+      <p class="sub">Track the business processes your agents run</p>
+      <form class="row" id="wf-form" style="margin-bottom:8px">
+        <input type="text" id="wf-input" placeholder="New workflow…" autocomplete="off" maxlength="200">
+        <button class="primary" type="submit">Add</button>
+      </form>
+      <div id="wf-list" class="empty">Loading…</div>
+    </div>
+  </section>
+</main>
+
+<nav id="nav">
+  <button data-view="overview" class="active"><span class="icon">◉</span>Overview</button>
+  <button data-view="metrics"><span class="icon">▥</span>Metrics</button>
+  <button data-view="agent"><span class="icon">✳</span>Agent</button>
+  <button data-view="knowledge"><span class="icon">❋</span>Knowledge</button>
+  <button data-view="workflows"><span class="icon">☰</span>Workflows</button>
+</nav>
+
+<script>
+(() => {
+  'use strict';
+
+  const $ = (sel) => document.querySelector(sel);
+
+  const compact = (n) => {
+    if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+    return String(n);
+  };
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // --- Navigation -----------------------------------------------------------
+  $('#nav').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-view]');
+    if (!btn) return;
+    document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.view').forEach((v) =>
+      v.classList.toggle('active', v.id === 'view-' + btn.dataset.view));
+  });
+
+  // --- Overview -------------------------------------------------------------
+  async function loadOverview() {
+    try {
+      const [health, metrics, workflows] = await Promise.all([
+        fetch('/api/health').then((r) => r.json()),
+        fetch('/api/metrics/youtube').then((r) => r.json()),
+        fetch('/api/workflows').then((r) => r.json()),
+      ]);
+      const activeWf = workflows.filter((w) => w.status === 'active').length;
+      $('#overview-tiles').innerHTML = `
+        <div class="tile"><div class="label">Subscribers</div><div class="value">${compact(metrics.channel.subscribers)}</div></div>
+        <div class="tile"><div class="label">Total views</div><div class="value">${compact(metrics.channel.views)}</div></div>
+        <div class="tile"><div class="label">Active workflows</div><div class="value">${activeWf}</div></div>`;
+      const rows = [
+        ['YouTube metrics', health.modules.youtube],
+        ['Hermes agent', health.modules.hermes],
+        ['Knowledge base', health.modules.knowledge],
+      ];
+      $('#status-list').className = '';
+      $('#status-list').innerHTML = rows.map(([name, live]) => `
+        <div class="wf">
+          <span class="wf-dot ${live ? 'done' : 'todo'}"></span>
+          <span class="wf-title">${name}</span>
+          <span class="badge ${live ? 'live' : ''}">${live ? 'connected' : 'demo mode'}</span>
+        </div>`).join('');
+    } catch {
+      $('#status-list').textContent = 'Could not reach the server.';
+    }
+  }
+
+  // --- Metrics chart ----------------------------------------------------------
+  function renderChart(videos) {
+    const svg = $('#views-chart');
+    const tip = $('#chart-tooltip');
+    const data = videos.slice(0, 6);
+    if (!data.length) { svg.outerHTML = '<p class="empty">No recent videos.</p>'; return; }
+
+    const W = 640, H = 260;
+    const m = { top: 24, right: 12, bottom: 40, left: 44 };
+    const iw = W - m.left - m.right, ih = H - m.top - m.bottom;
+    const maxV = Math.max(...data.map((d) => d.views));
+    // round the axis top to a clean number
+    const pow = Math.pow(10, String(Math.ceil(maxV)).length - 1);
+    const top = Math.ceil(maxV / pow) * pow;
+    const band = iw / data.length;
+    const barW = Math.min(24, band * 0.5);
+    const maxIdx = data.reduce((mi, d, i) => (d.views > data[mi].views ? i : mi), 0);
+
+    const styles = getComputedStyle(document.documentElement);
+    const c = (v) => styles.getPropertyValue(v).trim();
+
+    let el = `<svg id="views-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Bar chart of views for recent videos">`;
+    // hairline gridlines + y ticks
+    for (let i = 0; i <= 4; i++) {
+      const v = (top / 4) * i;
+      const y = m.top + ih - (v / top) * ih;
+      el += `<line x1="${m.left}" y1="${y}" x2="${W - m.right}" y2="${y}" stroke="${i === 0 ? c('--baseline') : c('--grid')}" stroke-width="1"/>`;
+      el += `<text x="${m.left - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="${c('--muted')}">${compact(v)}</text>`;
+    }
+    // bars: 4px rounded data-end, square baseline (rect + baseline patch)
+    data.forEach((d, i) => {
+      const h = Math.max((d.views / top) * ih, 2);
+      const x = m.left + band * i + (band - barW) / 2;
+      const y = m.top + ih - h;
+      el += `<g class="bar" data-i="${i}">`;
+      el += `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="4" fill="${c('--series-1')}"/>`;
+      if (h > 4) el += `<rect x="${x}" y="${m.top + ih - 4}" width="${barW}" height="4" fill="${c('--series-1')}"/>`;
+      // invisible full-band hit target for hover/touch
+      el += `<rect x="${m.left + band * i}" y="${m.top}" width="${band}" height="${ih}" fill="transparent"/>`;
+      if (i === maxIdx) el += `<text x="${x + barW / 2}" y="${y - 8}" text-anchor="middle" font-size="11" font-weight="600" fill="${c('--ink')}">${compact(d.views)}</text>`;
+      el += `<text x="${x + barW / 2}" y="${m.top + ih + 16}" text-anchor="middle" font-size="10" fill="${c('--muted')}">${esc(d.publishedAt.slice(5))}</text>`;
+      el += `</g>`;
+    });
+    el += `<text x="${m.left}" y="${H - 6}" font-size="10" fill="${c('--muted')}">x: publish date (MM-DD) · y: views</text>`;
+    el += `</svg>`;
+    svg.outerHTML = el;
+
+    const wrap = $('#chart-wrap');
+    const chart = $('#views-chart');
+    chart.addEventListener('pointermove', (e) => {
+      const g = e.target.closest('g.bar');
+      if (!g) { tip.style.opacity = 0; return; }
+      const d = data[Number(g.dataset.i)];
+      tip.innerHTML = `<div class="t-title">${esc(d.title)}</div><div class="t-val">${d.views.toLocaleString()} views · ${esc(d.publishedAt)}</div>`;
+      const r = wrap.getBoundingClientRect();
+      tip.style.opacity = 1;
+      const tx = Math.min(Math.max(e.clientX - r.left + 12, 0), r.width - tip.offsetWidth - 4);
+      tip.style.left = tx + 'px';
+      tip.style.top = (e.clientY - r.top - tip.offsetHeight - 14) + 'px';
+    });
+    chart.addEventListener('pointerleave', () => { tip.style.opacity = 0; });
+
+    $('#views-table').innerHTML =
+      `<tr><th>Video</th><th style="text-align:right">Views</th><th>Published</th></tr>` +
+      data.map((d) => `<tr><td>${esc(d.title)}</td><td class="num">${d.views.toLocaleString()}</td><td>${esc(d.publishedAt)}</td></tr>`).join('');
+  }
+
+  async function loadMetrics() {
+    try {
+      const m = await fetch('/api/metrics/youtube').then((r) => r.json());
+      if (m.error) throw new Error(m.error);
+      $('#yt-badge').textContent = m.demo ? 'demo data' : 'live';
+      $('#yt-badge').classList.toggle('live', !m.demo);
+      $('#yt-channel-name').textContent = m.channel.title;
+      $('#yt-tiles').innerHTML = `
+        <div class="tile"><div class="label">Subscribers</div><div class="value">${compact(m.channel.subscribers)}</div></div>
+        <div class="tile"><div class="label">Total views</div><div class="value">${compact(m.channel.views)}</div></div>
+        <div class="tile"><div class="label">Videos</div><div class="value">${compact(m.channel.videos)}</div></div>`;
+      renderChart(m.recentVideos);
+    } catch (err) {
+      $('#yt-channel-name').textContent = 'Metrics unavailable: ' + err.message;
+    }
+  }
+
+  // --- Hermes chat ------------------------------------------------------------
+  async function loadHermesBadge() {
+    try {
+      const h = await fetch('/api/health').then((r) => r.json());
+      $('#hermes-badge').textContent = h.modules.hermes ? 'live' : 'demo mode';
+      $('#hermes-badge').classList.toggle('live', h.modules.hermes);
+    } catch { $('#hermes-badge').textContent = 'offline'; }
+  }
+
+  $('#chat-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = $('#chat-input');
+    const message = input.value.trim();
+    if (!message) return;
+    input.value = '';
+    const log = $('#chat-log');
+    log.insertAdjacentHTML('beforeend', `<div class="msg user">${esc(message)}</div>`);
+    log.insertAdjacentHTML('beforeend', `<div class="msg agent pending">…</div>`);
+    log.scrollTop = log.scrollHeight;
+    const pending = log.lastElementChild;
+    try {
+      const res = await fetch('/api/hermes/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+      });
+      const data = await res.json();
+      pending.classList.remove('pending');
+      pending.textContent = data.reply || data.error || 'No response.';
+    } catch {
+      pending.classList.remove('pending');
+      pending.textContent = 'Could not reach Hermes.';
+    }
+    log.scrollTop = log.scrollHeight;
+  });
+
+  // --- Knowledge --------------------------------------------------------------
+  async function loadDocs() {
+    try {
+      const docs = await fetch('/api/knowledge/docs').then((r) => r.json());
+      const list = $('#doc-list');
+      list.className = '';
+      list.innerHTML = docs.length
+        ? docs.map((d) => `<div class="result"><span class="r-title">${esc(d.title)}</span><span class="r-file">${esc(d.file)}</span></div>`).join('')
+        : '<p class="empty">No documents yet — add markdown files to <code>knowledge/</code>.</p>';
+    } catch { $('#doc-list').textContent = 'Could not load documents.'; }
+  }
+
+  $('#search-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const q = $('#search-input').value.trim();
+    if (!q) return;
+    const out = $('#search-results');
+    out.innerHTML = '<p class="empty">Searching…</p>';
+    try {
+      const data = await fetch('/api/knowledge/search?q=' + encodeURIComponent(q)).then((r) => r.json());
+      out.innerHTML = data.results.length
+        ? data.results.map((r) => `
+            <div class="result">
+              <div class="r-title">${esc(r.title)}<span class="r-file">${esc(r.file)}</span></div>
+              <div class="r-snippet">${esc(r.snippet)}</div>
+            </div>`).join('')
+        : `<p class="empty">No matches for “${esc(q)}”.</p>`;
+    } catch { out.innerHTML = '<p class="empty">Search failed.</p>'; }
+  });
+
+  // --- Workflows ----------------------------------------------------------------
+  const STATUSES = ['todo', 'active', 'done'];
+
+  function renderWorkflows(workflows) {
+    const list = $('#wf-list');
+    list.className = '';
+    if (!workflows.length) { list.innerHTML = '<p class="empty">No workflows yet.</p>'; return; }
+    list.innerHTML = workflows.map((w) => `
+      <div class="wf ${w.status}" data-id="${w.id}">
+        <span class="wf-dot ${w.status}"></span>
+        <span class="wf-title">${esc(w.title)}</span>
+        <select aria-label="Status for ${esc(w.title)}">
+          ${STATUSES.map((s) => `<option value="${s}" ${s === w.status ? 'selected' : ''}>${s}</option>`).join('')}
+        </select>
+      </div>`).join('');
+  }
+
+  async function loadWorkflows() {
+    try { renderWorkflows(await fetch('/api/workflows').then((r) => r.json())); }
+    catch { $('#wf-list').textContent = 'Could not load workflows.'; }
+  }
+
+  $('#wf-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = $('#wf-input');
+    const title = input.value.trim();
+    if (!title) return;
+    input.value = '';
+    await fetch('/api/workflows', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title }),
+    });
+    loadWorkflows();
+    loadOverview();
+  });
+
+  $('#wf-list').addEventListener('change', async (e) => {
+    const sel = e.target.closest('select');
+    const row = e.target.closest('.wf');
+    if (!sel || !row) return;
+    await fetch('/api/workflows/' + row.dataset.id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: sel.value }),
+    });
+    loadWorkflows();
+    loadOverview();
+  });
+
+  // --- Boot -----------------------------------------------------------------------
+  loadOverview();
+  loadMetrics();
+  loadHermesBadge();
+  loadDocs();
+  loadWorkflows();
+})();
+</script>
+</body>
+</html>
